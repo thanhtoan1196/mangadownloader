@@ -4,6 +4,9 @@ import re
 import os
 from datetime import datetime
 import json
+import zipfile
+import tarfile
+import sys
 
 class MangaDownloader:
     chapterList = []
@@ -18,38 +21,36 @@ class MangaDownloader:
         self.failure_path = failure_path
         return
 
-    def __download_files(self,fileURL, savingURL):
-        error = False
-        try:
-            response  = requests.get(fileURL, stream=True)
-            if not response.ok:
-                error = True        
-        except:
-            error = True
+
+    def __prepare_download_files(self,savingURL):
+        if not os.path.isfile(savingURL):
+            filedata = file(savingURL,"wb")
+        else:
+            i=0
+            spliter = savingURL.split(".")
+            extension = spliter[len(spliter)-1]
+            newfilepath = savingURL.replace("."+extension, str(i)+"."+extension)
             
-        if error:
-            return False
-        else:        
-            if not os.path.isfile(savingURL):
-                filedata = file(savingURL,"wb")
-            else:
-                i=0
-                spliter = savingURL.split(".")
-                extension = spliter[len(spliter)-1]
+            while os.path.isfile(newfilepath):
+                i+=1
                 newfilepath = savingURL.replace("."+extension, str(i)+"."+extension)
                 
-                while os.path.isfile(newfilepath):                                
-                    i+=1
-                    newfilepath = savingURL.replace("."+extension, str(i)+"."+extension)
-                    
-                filedata = file(newfilepath,"wb")
-                    
-            
+            filedata = file(newfilepath,"wb")
+        return filedata
+
+    def __download_files(self,fileURL, savingURL):
+        success = True
+        try:
+            response  = requests.get(fileURL, stream=True, timeout=30)
+            filedata = self.__prepare_download_files(savingURL)
             for block in response.iter_content(1024):
                 if not block:
                     break
                 filedata.write(block)
-        return True
+        except requests.exceptions.RequestException as e:
+            success = False
+            print "Gotta error :" + str(e)
+        return success
 
     def __write_log(self,message):
         current = datetime.now()
@@ -167,6 +168,25 @@ class MangaDownloader:
 
         print "Finished chapter : %s" % chaptername
         self.downloaded_chapter.append(chapter)                    
+        self.__tar_chapter()
+
+        return
+
+    def __zip_chapter(self):
+        zipf = zipfile.ZipFile(self.directory + '.zip', 'w', zipfile.ZIP_DEFLATED)
+        self.__zipdir(zipf)
+        zipf.close()
+        return
+
+    def __zipdir(self,ziph):
+        for root, dirs, files in os.walk(self.directory):
+            for file in files:
+                ziph.write(os.path.join(root, file))
+        return
+
+    def __tar_chapter(self):
+        with tarfile.open(self.directory + '.tar.gz', "w:gz") as tar:
+            tar.add(self.directory, arcname=os.path.basename(self.directory))
         return
 
     def __download_chapter_images(self,chaptername):
@@ -188,7 +208,7 @@ class MangaDownloader:
                     print "Downloaded %s/%s" % (i,total_file)                 
                 else:
                     print "Failed %s/%s" % (i,total_file)
-                    self.__log_failed_file(chapter,fileURL)
+                    self.__log_failed_file(chaptername,fileURL)
 
                 self.__write_log("%s\tDownloading %s - %s - url : %s" % ("Success" if result else "Failed",chaptername,filename, fileURL))
                 self.__log_downloaded_image(downloading_image)

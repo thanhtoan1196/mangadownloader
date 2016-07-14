@@ -10,8 +10,13 @@ class Manga24h(MangaDownloader):
 	
 	def _parsing_main_page(self):
 		print "parsing"
-		response = requests.get(self.mangaURL)
-		parsed_html = BeautifulSoup(response.text)
+		try:
+			response = requests.get(self.mangaURL)
+		except requests.exceptions.RequestException as e:
+			print "Gotta error :" + str(e)
+			return
+
+		parsed_html = BeautifulSoup(response.text, 'html.parser')
 		option_select = parsed_html.find("select", class_ = "form-control")
 		if option_select is not None:
 			parsed_chapters = option_select.find_all("option",limit=2000)
@@ -29,8 +34,14 @@ class Manga24h(MangaDownloader):
 		return
 
 	def _parsing_chapter_page(self,chapterURL):
-		response = requests.get(chapterURL)
-		parsed_html = BeautifulSoup(response.text)
+		self.imageList = []
+		try:
+			response = requests.get(chapterURL)
+		except requests.exceptions.RequestException as e:
+			print "Gotta error :" + str(e)
+			return
+
+		parsed_html = BeautifulSoup(response.text, 'html.parser')
 		data_img = parsed_html.find("div",{"id":"chapcontent"}).find_all("div",{"class":"text-center img_episode"})
 		for div_image in data_img:
 			image = div_image.find("img")
