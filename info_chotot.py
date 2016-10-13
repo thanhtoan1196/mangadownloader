@@ -9,7 +9,7 @@ import time
 
 URLfeed = 'https://www.chotot.com/tp-ho-chi-minh/mua-ban-bat-dong-san'
 LASTLink = 'nothing'
-MAXprice = 1100000000
+MAXprice = 1500000000
 
 
 def getting_feed_and_parse():

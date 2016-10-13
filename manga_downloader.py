@@ -168,7 +168,7 @@ class MangaDownloader:
 
         print "Finished chapter : %s" % chaptername
         self.downloaded_chapter.append(chapter)                    
-        self.__tar_chapter()
+        self.__zip_chapter()
 
         return
 
@@ -220,7 +220,7 @@ class MangaDownloader:
 
 
     def __log_failed_file(self,chapter,fileURL):
-        self.ffailure.write("Failed\t\%s\t%s"%(chapter,fileURL))
+        self.ffailure.write("Failed\t\%s\t%s\n"%(chapter,fileURL))
         self.ffailure.flush()
         return
 
