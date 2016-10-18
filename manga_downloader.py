@@ -7,6 +7,7 @@ import json
 import zipfile
 import tarfile
 import sys
+from tqdm import tqdm
 
 class MangaDownloader:
     chapterList = []
@@ -123,7 +124,7 @@ class MangaDownloader:
         downloading = True
         chapter_count = len(self.downloaded_chapter) + 1 
 
-        for chapter in self.chapterList:
+        for chapter in tqdm(self.chapterList):
             try:
                 if not downloading:
                     print "The downloading process has been stopped"
@@ -151,7 +152,7 @@ class MangaDownloader:
         return
 
     def __download_chapter(self,chapter,chapter_count):
-        print "Getting chapter: %s" % (chapter)
+        # print "Getting chapter: %s" % (chapter)
 
         chaptername = self.__prepare_download_folder("Download",chapter,chapter_count)
                             
@@ -166,7 +167,7 @@ class MangaDownloader:
         self.__stop_log()        
         self.__log_downloaded_chapter(chapter)
 
-        print "Finished chapter : %s" % chaptername
+        # print "Finished chapter : %s" % chaptername
         self.downloaded_chapter.append(chapter)                    
         self.__zip_chapter()
 
@@ -192,22 +193,24 @@ class MangaDownloader:
     def __download_chapter_images(self,chaptername):
         total_file = len(self.imageList)
         i = 0
-        for fileURL in self.imageList:
+        for fileURL in tqdm(self.imageList, leave=False):
             i+=1
             filename = self.__parsing_file_name_from_url(fileURL)
 
             savingURL = "%s/%s-%s" %(self.directory,i,filename)                    
             downloading_image = "%s - %s\n" % (self.directory, fileURL)
-            print downloading_image
+            # print downloading_image
 
             if downloading_image not in self.downloaded_images:
-                print "Downloading %s - %s - url : %s" % (chaptername,filename, fileURL)
+                # print "Downloading %s - %s - url : %s" % (chaptername,filename, fileURL)
 
                 result = self.__download_files(fileURL,savingURL)
-                if result:
-                    print "Downloaded %s/%s" % (i,total_file)                 
-                else:
-                    print "Failed %s/%s" % (i,total_file)
+                # if result:
+                #     print "Downloaded %s/%s" % (i,total_file)                 
+                # else:
+                #     print "Failed %s/%s" % (i,total_file)
+                #     self.__log_failed_file(chaptername,fileURL)
+                if not result:
                     self.__log_failed_file(chaptername,fileURL)
 
                 self.__write_log("%s\tDownloading %s - %s - url : %s" % ("Success" if result else "Failed",chaptername,filename, fileURL))
@@ -215,7 +218,7 @@ class MangaDownloader:
                 self.downloaded_images.append(savingURL)
             else:
                 self.__write_log("Downloaded %s - %s - url : %s" % (chaptername,filename, fileURL))
-                print "Image is already downloaded : %s" % (downloading_image)
+                # print "Image is already downloaded : %s" % (downloading_image)
         return
 
 
