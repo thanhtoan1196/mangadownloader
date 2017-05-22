@@ -15,7 +15,7 @@ class MangaDownloader:
     downloaded_chapter = []
     downloaded_images = []
 
-    def __init__(self, mangaURL, downloaded_chapter_path, downloaded_image_path, failure_path):        
+    def __init__(self, mangaURL, downloaded_chapter_path, downloaded_image_path, failure_path):
         self.mangaURL = mangaURL
         self.downloaded_chapter_path = downloaded_chapter_path
         self.downloaded_image_path = downloaded_image_path
@@ -31,11 +31,11 @@ class MangaDownloader:
             spliter = savingURL.split(".")
             extension = spliter[len(spliter)-1]
             newfilepath = savingURL.replace("."+extension, str(i)+"."+extension)
-            
+
             while os.path.isfile(newfilepath):
                 i+=1
                 newfilepath = savingURL.replace("."+extension, str(i)+"."+extension)
-                
+
             filedata = file(newfilepath,"wb")
         return filedata
 
@@ -69,14 +69,14 @@ class MangaDownloader:
     def __reload_downloaded_chapter(self):
         with open(self.downloaded_chapter_path) as fdownloaded_chapter:
             self.downloaded_chapter = fdownloaded_chapter.readlines()
-        for i in range(0,len(downloaded_chapter)):
+        for i in range(0,len(self.downloaded_chapter)):
             self.downloaded_chapter[i] = self.downloaded_chapter[i].strip()
         return
 
-    def __reload_downloaded_image():
+    def __reload_downloaded_image(self):
         with open(self.downloaded_image_path) as fdownloaded_image:
             self.downloaded_images = fdownloaded_image.readlines()
-        for i in range(0,len(downloaded_images)):
+        for i in range(0,len(self.downloaded_images)):
             self.downloaded_images[i] = self.downloaded_images[i].strip()
         return
 
@@ -95,21 +95,24 @@ class MangaDownloader:
         self.ffailure            = file(self.failure_path,mode)
         return
 
-    def __parsing_file_name_from_url(self,url):        
-        spliter = url.split("/")        
+    def __parsing_file_name_from_url(self,url):
+        spliter = url.split("/")
         filename = spliter[len(spliter)-1].split("?")[0]
-        
+
         if len(filename.split(".")[0]) <= 1:
             filename = "0" + filename
-        
-        extension = filename.split(".")[1][0:3]
-        name      = filename.split(".")[0]
-        
-        filename = name + "." + extension            
+        try:
+            extension = filename.split(".")[1][0:3]
+            name      = filename.split(".")[0]
+
+            filename = name + "." + extension
+        except:
+            self.__write_log("unexpect error when parsing filename in url: %s"%(url))
+            filename = ""
 
         return filename
 
-    def __prepare_download_folder(self,store_path,chapter_url,chapter_count):        
+    def __prepare_download_folder(self,store_path,chapter_url,chapter_count):
         spliter = chapter_url.split("/")
         chaptername = "%s-%s-%s" % (chapter_count,spliter[3],spliter[4])
         self.directory = "%s/%s" % (store_path,chaptername)
@@ -118,11 +121,11 @@ class MangaDownloader:
         return chaptername
 
 
-    def __process_downloading(self):        
+    def __process_downloading(self):
         self._parsing_main_page()
-        
+
         downloading = True
-        chapter_count = len(self.downloaded_chapter) + 1 
+        chapter_count = len(self.downloaded_chapter) + 1
 
         for chapter in tqdm(self.chapterList):
             try:
@@ -134,14 +137,14 @@ class MangaDownloader:
                     self.__download_chapter(chapter,chapter_count)
                     chapter_count+=1
                 else:
-                    print "Chapter is downloaded  : %s" % chapter                      
+                    print "Chapter is downloaded  : %s" % chapter
 
             except (KeyboardInterrupt, SystemExit):
-                downloading = False               
-                                    
+                downloading = False
+
                 self.fdownloaded_chapter.close()
                 self.fdownloaded_image.close()
-    
+
                 print "You stopped the downloading process, terminating..."
         return
 
@@ -155,20 +158,20 @@ class MangaDownloader:
         # print "Getting chapter: %s" % (chapter)
 
         chaptername = self.__prepare_download_folder("Download",chapter,chapter_count)
-                            
+
         self.__start_log("log/%s-log.log"%chaptername)
         self.__write_log("Getting chapter: %s" % (chapter))
 
         self._parsing_chapter_page(chapter)
         self.__download_chapter_images(chaptername)
 
-        
+
         self.__write_log("Finished chapter : %s" % chaptername)
-        self.__stop_log()        
+        self.__stop_log()
         self.__log_downloaded_chapter(chapter)
 
         # print "Finished chapter : %s" % chaptername
-        self.downloaded_chapter.append(chapter)                    
+        self.downloaded_chapter.append(chapter)
         self.__zip_chapter()
 
         return
@@ -197,28 +200,25 @@ class MangaDownloader:
             i+=1
             filename = self.__parsing_file_name_from_url(fileURL)
 
-            savingURL = "%s/%s-%s" %(self.directory,i,filename)                    
-            downloading_image = "%s - %s\n" % (self.directory, fileURL)
-            # print downloading_image
+            if filename != "":
+                savingURL = "%s/%s-%s" %(self.directory,i,filename)
+                downloading_image = "%s - %s\n" % (self.directory, fileURL)
 
-            if downloading_image not in self.downloaded_images:
-                # print "Downloading %s - %s - url : %s" % (chaptername,filename, fileURL)
+                if downloading_image not in self.downloaded_images:
 
-                result = self.__download_files(fileURL,savingURL)
-                # if result:
-                #     print "Downloaded %s/%s" % (i,total_file)                 
-                # else:
-                #     print "Failed %s/%s" % (i,total_file)
-                #     self.__log_failed_file(chaptername,fileURL)
-                if not result:
-                    self.__log_failed_file(chaptername,fileURL)
+                    result = self.__download_files(fileURL,savingURL)
 
-                self.__write_log("%s\tDownloading %s - %s - url : %s" % ("Success" if result else "Failed",chaptername,filename, fileURL))
-                self.__log_downloaded_image(downloading_image)
-                self.downloaded_images.append(savingURL)
+                    if not result:
+                        self.__log_failed_file(chaptername,fileURL)
+
+                    self.__write_log("%s\tDownloading %s - %s - url : %s" % ("Success" if result else "Failed",chaptername,filename, fileURL))
+                    self.__log_downloaded_image(downloading_image)
+                    self.downloaded_images.append(savingURL)
+                else:
+                    self.__write_log("Downloaded %s - %s - url : %s" % (chaptername,filename, fileURL))
+
             else:
-                self.__write_log("Downloaded %s - %s - url : %s" % (chaptername,filename, fileURL))
-                # print "Image is already downloaded : %s" % (downloading_image)
+                self.__log_failed_file(chaptername,fileURL)
         return
 
 
@@ -231,9 +231,9 @@ class MangaDownloader:
         self.fdownloaded_image.write("%s"%image)
         self.fdownloaded_image.flush()
         return
-    
+
     def __log_downloaded_chapter(self,chapter):
-        self.fdownloaded_chapter.write("%s\n"%chapter)  
+        self.fdownloaded_chapter.write("%s\n"%chapter)
         self.fdownloaded_chapter.flush()
         return
 
@@ -249,6 +249,6 @@ class MangaDownloader:
         self.__reload_downloaded_image()
 
         self.__prepare_files("a")
-                
+
         self.__process_downloading()
         return

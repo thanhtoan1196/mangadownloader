@@ -1,10 +1,11 @@
 from manga24h import Manga24h
+from truyentranhtuan import TruyenTranhTuan
 
 if __name__ == '__main__':
-	url = "http://manga24h.me/Samurai-Deeper-Kyo.htm"
+	url = "http://truyentranhtuan.com/bleach/"
 
-	downloader = Manga24h(url,"log/downloaded_chapter.log","log/downloaded_image.log","log/downloaded_failure_image.log")
+	downloader = TruyenTranhTuan(url,"log/downloaded_chapter.log","log/downloaded_image.log","log/downloaded_failure_image.log")
 
-	downloader.start_download()
+	downloader.resume_download()
 
 	pass
