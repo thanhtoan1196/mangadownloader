@@ -126,19 +126,19 @@ class MangaDownloader:
 
         downloading = True
         chapter_count = len(self.downloaded_chapter) + 1
-
-        for chapter in tqdm(self.chapterList):
+        tqdm_chapter = tqdm(self.chapterList)
+        for i in range(0,len(self.chapterList)):
+            chapter = self.chapterList[i]
             try:
                 if not downloading:
                     print "The downloading process has been stopped"
                     break
-
                 if chapter not in self.downloaded_chapter:
                     self.__download_chapter(chapter,chapter_count)
                     chapter_count+=1
                 else:
                     print "Chapter is downloaded  : %s" % chapter
-
+                tqdm_chapter.update(1)
             except (KeyboardInterrupt, SystemExit):
                 downloading = False
 
@@ -146,6 +146,7 @@ class MangaDownloader:
                 self.fdownloaded_image.close()
 
                 print "You stopped the downloading process, terminating..."
+        tqdm_chapter.close
         return
 
     def __close_all_logs(self):
@@ -196,7 +197,8 @@ class MangaDownloader:
     def __download_chapter_images(self,chaptername):
         total_file = len(self.imageList)
         i = 0
-        for fileURL in tqdm(self.imageList, leave=False):
+        tqdm_list = tqdm(self.imageList, leave=False)
+        for fileURL in tqdm_list:
             i+=1
             filename = self.__parsing_file_name_from_url(fileURL)
 
@@ -219,6 +221,7 @@ class MangaDownloader:
 
             else:
                 self.__log_failed_file(chaptername,fileURL)
+        tqdm_list.close()
         return
 
 
